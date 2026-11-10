@@ -1,0 +1,52 @@
+import json
+
+from palimpsest.data import manifest
+from palimpsest.data.license import is_allowed, normalize
+from palimpsest.llm.explain import build_prompt
+from palimpsest.llm.retriever import Retriever
+from palimpsest.config import KNOWLEDGE_FILE, SCRIPTS
+
+
+def test_license_normalisation():
+    assert normalize("CC0 1.0") == "cc0"
+    assert normalize("CC BY 4.0") == "cc-by"
+    assert normalize("CC BY-SA 4.0") == "cc-by-sa"
+    assert normalize("CC BY-NC 4.0") == "non-open"
+    assert normalize("CC BY-ND 2.0") == "non-open"
+    assert normalize("Public domain") == "pdm"
+    assert normalize("PD-old-70") == "pdm"
+    assert normalize("All rights reserved") is None
+
+
+def test_default_allowlist_excludes_sharealike_and_nc():
+    assert is_allowed("CC0") and is_allowed("Public domain") and is_allowed("CC BY 4.0")
+    assert not is_allowed("CC BY-SA 4.0")
+    assert not is_allowed("CC BY-NC 4.0")
+    assert not is_allowed(None)
+
+
+def test_manifest_dedupes_and_attributes(tmp_path):
+    p = tmp_path / "manifest.jsonl"
+    r = manifest.Record("met", "1", "Tablet", "http://i", "http://p", "cc0", "Gift of X")
+    assert manifest.append(p, [r]) == 1
+    assert manifest.append(p, [r]) == 0
+    manifest.write_attribution(p, tmp_path / "ATTRIBUTION.md")
+    assert "Tablet" in (tmp_path / "ATTRIBUTION.md").read_text()
+    assert json.loads(p.read_text().splitlines()[0])["license"] == "cc0"
+
+
+def test_retriever_finds_right_note():
+    r = Retriever()
+    assert r.search("Rosetta Stone Champollion decipherment")[0].source == "egyptian_hieroglyphs"
+    assert r.search("wedge-shaped clay tablet Mesopotamia")[0].source == "cuneiform"
+
+
+def test_every_script_has_a_knowledge_file():
+    sources = {c.source for c in Retriever().chunks}
+    assert set(KNOWLEDGE_FILE) == set(SCRIPTS)
+    assert set(KNOWLEDGE_FILE.values()) <= sources
+
+
+def test_prompt_contains_uncertainty_inputs():
+    prompt = build_prompt(["a clay tablet"], {"cuneiform": 0.8, "linear_b": 0.1}, None, [])
+    assert "Cuneiform: 80%" in prompt and "no reference notes" in prompt
