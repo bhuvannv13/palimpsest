@@ -50,3 +50,17 @@ def test_every_script_has_a_knowledge_file():
 def test_prompt_contains_uncertainty_inputs():
     prompt = build_prompt(["a clay tablet"], {"cuneiform": 0.8, "linear_b": 0.1}, None, [])
     assert "Cuneiform: 80%" in prompt and "no reference notes" in prompt
+
+
+def test_cer_and_topk():
+    from palimpsest.eval import cer, top_k_accuracy
+    assert cer("abc", "abc") == 0 and cer("abc", "abd") == 1 / 3 and cer("", "") == 0
+    preds = [{"a": 0.6, "b": 0.4}, {"a": 0.3, "b": 0.7}]
+    assert top_k_accuracy(preds, ["a", "a"], 1) == 0.5 and top_k_accuracy(preds, ["a", "a"], 2) == 1.0
+
+
+def test_split_keeps_views_of_one_object_together():
+    from palimpsest.data.split import assign, group_key
+    assert group_key("Cuneiform Akkadian clay tablet 1.jpg", "x") == group_key("Cuneiform Akkadian clay tablet 2.jpg", "y")
+    g = group_key("Tablet 7.jpg", "x")
+    assert assign(g) == assign(g) and assign(g) in {"train", "val", "test"}

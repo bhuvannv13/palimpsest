@@ -46,3 +46,8 @@ Only CC0 / public domain / CC BY items pass the allow-list; each gets a provenan
 pip install -e ".[dev]" && pytest
 ```
 Code is MIT. Dataset licenses follow each item's manifest row.
+
+## More
+- [Contributing](CONTRIBUTING.md) · [Data policy](docs/DATA_POLICY.md) · [Training](docs/TRAINING.md) · [Model card template](docs/MODEL_CARD.md)
+- Train a script classifier: `python -m palimpsest.training.train_script_classifier data/labeled`
+- Docker: `docker build -t palimpsest . && docker run -p 7860:7860 -e ANTHROPIC_API_KEY palimpsest`
