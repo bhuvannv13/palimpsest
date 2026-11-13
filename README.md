@@ -8,8 +8,6 @@ photo ─► detector ─► script ID ─► OCR / sign reader ─► LLM + his
           DETR)        ViT)         TrOCR)                knowledge/*.md)
 ```
 
-> I read "culvert" in the original brief as **cuneiform**. If you meant something else, tell me and the script list in `src/palimpsest/config.py` is easy to change.
-
 ## Honest scope
 - Works out of the box (zero-shot): object detection, script identification, history explanations.
 - Works for print-like Greek, Latin, Hebrew, Devanagari via Tesseract; weak on ancient hands until you fine-tune.
